@@ -192,6 +192,75 @@
     .menu-view h2 { margin: 0 0 6px; font-size: 18px; }
     .menu-view > p { margin: 0 0 14px; color: #aab7c7; font-size: 12px; }
 
+    #account-panel {
+      width: min(390px, 100%);
+      margin: 20px auto;
+      padding: 18px;
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 12px;
+      background: rgba(5,12,16,.22);
+      text-align: left;
+    }
+
+    #account-panel h2 { margin: 0 0 6px; font-size: 18px; }
+    #account-panel p { margin: 0 0 14px; color: #aab7c7; font-size: 12px; }
+
+    #account-form {
+      display: grid;
+      gap: 10px;
+    }
+
+    #account-form label {
+      display: grid;
+      gap: 5px;
+      color: #b6c7ca;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    #account-form input {
+      width: 100%;
+      padding: 9px 10px;
+      border: 1px solid rgba(255,255,255,.16);
+      border-radius: 8px;
+      background: #222e3b;
+      color: #fff;
+      font: inherit;
+    }
+
+    #account-submit, #account-toggle, #account-bar button, #resume-game {
+      border: 0;
+      border-radius: 8px;
+      padding: 9px 11px;
+      background: #84e58b;
+      color: #17251a;
+      cursor: pointer;
+      font: inherit;
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    #account-actions { display: flex; gap: 8px; align-items: center; }
+    #account-toggle { background: #4a6372; color: #fff; }
+    #account-status { min-height: 18px; margin: 10px 0 0 !important; color: #ffd166 !important; }
+
+    #account-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 0 0 12px;
+      color: #b6c7ca;
+      font-size: 11px;
+    }
+
+    #account-bar button { background: #4a6372; color: #fff; }
+    #resume-game { background: #ffd166; }
+    #account-notice { margin: 0 0 10px !important; color: #ffd166; font-size: 11px; }
+
+    #account-panel[hidden], #game-menu[hidden] { display: none; }
+
     #campaign-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
@@ -515,7 +584,7 @@
 
     .actions button { min-width: 0; }
 
-    button.action, #start-wave, #pause-game, #back-menu, #speed-game, #airstrike-game {
+    button.action, #start-wave, #pause-game, #back-menu, #speed-game, #airstrike-game, #save-game, #auto-wave {
       border: 0;
       border-radius: 8px;
       padding: 9px 10px;
@@ -548,6 +617,9 @@
     #back-menu { background: #222e3b; color: #fff; border: 1px solid rgba(255,255,255,.12); }
     #speed-game { background: #4a6372; color: #fff; }
     #airstrike-game { background: #ef8b58; color: #28170f; }
+    #save-game { background: #84e58b; color: #17251a; }
+    #auto-wave { background: #4a6372; color: #fff; }
+    #auto-wave.active { background: #84e58b; color: #17251a; }
 
     #airstrike-game.ready {
       animation: ability-pulse 1.8s ease-in-out infinite;
@@ -754,6 +826,33 @@
   <section id="menu">
     <div class="panel" id="menu-card">
       <h1>BLOCKFRONT</h1>
+      <section id="account-panel">
+        <h2 id="account-title">Account maken</h2>
+        <p>Maak een account om in te loggen en je game online te bewaren.</p>
+        <form id="account-form">
+          <label for="account-username">Gebruikersnaam
+            <input id="account-username" name="username" type="text" minlength="3" maxlength="24"
+              autocomplete="username" required>
+          </label>
+          <label for="account-password">Wachtwoord
+            <input id="account-password" name="password" type="password" minlength="8" maxlength="128"
+              autocomplete="new-password" required>
+          </label>
+          <div id="account-actions">
+            <button id="account-submit" type="submit">Account maken</button>
+            <button id="account-toggle" type="button">Ik heb al een account</button>
+          </div>
+        </form>
+        <p id="account-status" role="status" aria-live="polite"></p>
+      </section>
+
+      <div id="game-menu" hidden>
+      <div id="account-bar">
+        <span id="account-name"></span>
+        <button id="resume-game" type="button" hidden>Game hervatten</button>
+        <button id="account-logout" type="button">Uitloggen</button>
+      </div>
+        <p id="account-notice" role="status" aria-live="polite"></p>
       <p>Kies een map om te beginnen.</p>
 
       <nav id="menu-navigation" aria-label="Spelmenu">
@@ -919,6 +1018,7 @@
         </div>
         <div id="codex-entries"></div>
       </section>
+      </div>
     </div>
   </section>
 
@@ -997,6 +1097,8 @@
 
     <div id="bottom">
       <button id="start-wave" type="button">Start wave 1</button>
+      <button id="auto-wave" type="button" aria-pressed="false">Auto wave: uit</button>
+      <button id="save-game" type="button" title="Opslaan kan tussen waves">Game opslaan</button>
       <button id="speed-game" type="button" aria-label="Spelsnelheid wijzigen">Snelheid 1×</button>
       <button id="airstrike-game" type="button" aria-label="Luchtsteun inzetten">Luchtsteun $300</button>
       <button id="pause-game" type="button" aria-pressed="false">Pauze</button>
@@ -1110,6 +1212,8 @@
       let lives = 20;
       let wave = 1;
       let waveActive = false;
+      let autoWave = false;
+      let autoWaveTimer = null;
       let paused = false;
       let gameOver = false;
       let difficulty = 'normal';
@@ -1126,6 +1230,9 @@
       let airstrikeCooldown = 0;
       let airstrikeTargeting = false;
       let waveStartLives = 0;
+      let currentUser = null;
+      let authMode = 'register';
+      let hasSavedGame = false;
       let mouse = {x:0,y:0,inside:false};
       const targetingModes = ['leading','strongest','nearest'];
       const targetingLabels = {
@@ -3674,6 +3781,7 @@
         wave: document.getElementById('wave'),
         toast: document.getElementById('toast'),
         start: document.getElementById('start-wave'),
+        autoWave: document.getElementById('auto-wave'),
         pause: document.getElementById('pause-game'),
         towerPanel: document.getElementById('tower-panel'),
         selectedName: document.getElementById('selected-name'),
@@ -3709,8 +3817,105 @@
         customMaps: document.getElementById('custom-maps'),
         codexEntries: document.getElementById('codex-entries'),
         overlayTitle: document.getElementById('overlay-title'),
-        nextMission: document.getElementById('next-mission')
+        nextMission: document.getElementById('next-mission'),
+        saveGame: document.getElementById('save-game'),
+        resumeGame: document.getElementById('resume-game')
       };
+
+      const accountUi = {
+        panel: document.getElementById('account-panel'),
+        gameMenu: document.getElementById('game-menu'),
+        form: document.getElementById('account-form'),
+        title: document.getElementById('account-title'),
+        username: document.getElementById('account-username'),
+        password: document.getElementById('account-password'),
+        submit: document.getElementById('account-submit'),
+        toggle: document.getElementById('account-toggle'),
+        status: document.getElementById('account-status'),
+        name: document.getElementById('account-name'),
+        notice: document.getElementById('account-notice')
+      };
+
+      async function apiRequest(url, options={}) {
+        let response;
+        try {
+          response=await fetch(url,{
+            credentials:'same-origin',
+            ...options,
+            headers:{
+              ...(options.headers||{}),
+              ...(options.body?{'Content-Type':'application/json'}:{})
+            }
+          });
+        } catch (error) {
+          throw new Error('De server is niet bereikbaar. Start de game via node server.js.');
+        }
+        const result=await response.json();
+        if (!response.ok) {
+          const error=new Error(result.error||'Het verzoek is mislukt.');
+          error.status=response.status;
+          throw error;
+        }
+        return result;
+      }
+
+      function setAuthMode(mode) {
+        authMode=mode;
+        const registering=mode==='register';
+        accountUi.title.textContent=registering?'Account maken':'Inloggen';
+        accountUi.submit.textContent=registering?'Account maken':'Inloggen';
+        accountUi.password.autocomplete=registering?'new-password':'current-password';
+        accountUi.toggle.textContent=registering
+          ?'Ik heb al een account'
+          :'Nog geen account? Maak er een';
+        accountUi.status.textContent='';
+      }
+
+      function showAccountGate(message='') {
+        currentUser=null;
+        accountUi.panel.hidden=false;
+        accountUi.gameMenu.hidden=true;
+        accountUi.status.textContent=message;
+        document.getElementById('menu').style.display='grid';
+        document.getElementById('game-ui').style.display='none';
+      }
+
+      async function showAuthenticatedMenu(username) {
+        currentUser=username;
+        accountUi.panel.hidden=true;
+        accountUi.gameMenu.hidden=false;
+        accountUi.name.textContent='Ingelogd als '+username;
+        accountUi.notice.textContent='';
+        document.getElementById('menu').style.display='grid';
+        document.getElementById('game-ui').style.display='none';
+        renderRecords();
+        renderCampaign();
+        try {
+          await refreshSavedGame();
+        } catch (error) {
+          accountUi.notice.textContent=error.message;
+        }
+      }
+
+      async function refreshSavedGame() {
+        const result=await apiRequest('/api/save');
+        hasSavedGame=Boolean(result.save);
+        ui.resumeGame.hidden=!hasSavedGame;
+        const waveLabel=Number.isInteger(result.save?.wave)
+          ?' · wave '+result.save.wave
+          :'';
+        ui.resumeGame.textContent='Game hervatten'+waveLabel;
+      }
+
+      async function initializeAccount() {
+        try {
+          const session=await apiRequest('/api/session');
+          if (session.authenticated) await showAuthenticatedMenu(session.username);
+          else showAccountGate();
+        } catch (error) {
+          showAccountGate(error.message);
+        }
+      }
 
       function readRecords() {
         try {
@@ -3787,6 +3992,7 @@
       }
 
       function completeMission(mission) {
+        clearAutoWaveTimer();
         waveActive=false;
         gameOver=true;
         campaignUnlocked=Math.max(campaignUnlocked,mission.id+1);
@@ -4123,6 +4329,10 @@
         ui.wave.textContent = wave;
         ui.start.textContent = waveActive ? 'Wave bezig…' : 'Start wave ' + wave;
         ui.start.disabled = waveActive || gameOver || paused;
+        ui.autoWave.textContent = 'Auto wave: ' + (autoWave ? 'aan' : 'uit');
+        ui.autoWave.classList.toggle('active',autoWave);
+        ui.autoWave.setAttribute('aria-pressed',String(autoWave));
+        ui.autoWave.disabled = !currentMap || gameOver;
         ui.pause.textContent = paused ? 'Hervat' : 'Pauze';
         ui.pause.disabled = !currentMap || gameOver;
         ui.pause.setAttribute('aria-pressed',String(paused));
@@ -4135,6 +4345,10 @@
         ui.waveProgressLabel.textContent=waveActive
           ?Math.max(0,spawnTotal-spawned)+enemies.length+' vijanden over'
           :wavePreviewLabel();
+        ui.saveGame.disabled=!currentMap||gameOver||waveActive||!currentUser;
+        ui.saveGame.title=waveActive
+          ?'Sla je game op zodra deze wave is afgelopen'
+          :'Game opslaan bij je account';
         ui.targetMode.disabled=!selectedTower;
         ui.targetMode.textContent='Doel: '+(selectedTower
           ?targetingLabels[selectedTower.targetMode]||targetingLabels.leading
@@ -4235,6 +4449,11 @@
       }
 
       function startMap(mapId) {
+        if (!currentUser) {
+          showAccountGate('Log in om een game te starten.');
+          return;
+        }
+        clearAutoWaveTimer();
         currentMap=maps[mapId];
         if (!currentMap) return;
         path=currentMap.path;
@@ -4284,7 +4503,135 @@
         say('Kies een toren en klik op een leeg vak');
       }
 
+      async function saveCurrentGame() {
+        if (!currentUser) {
+          showAccountGate('Log in om je game op te slaan.');
+          return;
+        }
+        if (!currentMap||gameOver) return say('Er is geen actieve game om op te slaan.','#ff7681');
+        if (waveActive) return say('Sla je game op tussen waves.','#ff7681');
+
+        const mapId=Object.keys(maps).find(id=>maps[id]===currentMap);
+        if (!mapId) return say('Deze kaart kan niet worden opgeslagen.','#ff7681');
+        const save={
+          version:1,
+          mapId,
+          map:{
+            id:mapId,
+            name:currentMap.name,
+            biome:currentMap.biome,
+            lives:currentMap.lives,
+            ground:currentMap.ground,
+            road:currentMap.road,
+            path:currentMap.path.map(point=>({x:point.x,y:point.y}))
+          },
+          missionId:activeMission?.id||null,
+          difficulty,
+          weather,
+          quality,
+          cash,
+          lives,
+          wave,
+          gameSpeed,
+          airstrikeCooldown,
+          towers:towers.map(tower=>({...tower}))
+        };
+        ui.saveGame.disabled=true;
+        try {
+          await apiRequest('/api/save',{
+            method:'PUT',
+            body:JSON.stringify({save})
+          });
+          await refreshSavedGame();
+          say('Game opgeslagen bij je account.','#84e58b');
+        } catch (error) {
+          if (error.status===401) {
+            showAccountGate('Je sessie is verlopen. Log opnieuw in.');
+            return;
+          }
+          say(error.message,'#ff7681');
+        } finally {
+          updateUI();
+        }
+      }
+
+      function restoreSavedGame(saved) {
+        const mapId=saved?.mapId;
+        const customMapId=typeof mapId==='string'&&/^custom-[a-z0-9-]+$/i.test(mapId);
+        if (!saved||saved.version!==1||typeof mapId!=='string'||
+            !difficultySettings[saved.difficulty]||
+            !['clear','rain','snow','mist'].includes(saved.weather)||
+            !['high','medium','low'].includes(saved.quality)||
+            !Number.isFinite(saved.cash)||saved.cash<0||saved.cash>100000000||
+            !Number.isFinite(saved.lives)||saved.lives<1||saved.lives>100||
+            !Number.isInteger(saved.wave)||saved.wave<1||saved.wave>100000||
+            !Number.isFinite(saved.gameSpeed)||![1,1.5,2].includes(saved.gameSpeed)||
+            !Number.isFinite(saved.airstrikeCooldown)||saved.airstrikeCooldown<0||
+            saved.airstrikeCooldown>3600||!Array.isArray(saved.towers)||
+            saved.towers.length>200) {
+          throw new Error('De opgeslagen game is ongeldig.');
+        }
+
+        if (customMapId) {
+          if (!validCustomMap({...saved.map,id:mapId})) {
+            throw new Error('De opgeslagen kaart is ongeldig.');
+          }
+          const map=saved.map;
+          maps[mapId]={
+            name:map.name.toUpperCase(),
+            biome:map.biome,
+            lives:map.lives,
+            ground:map.ground,
+            road:map.road,
+            path:map.path
+          };
+          if (!customMapIds.includes(mapId)) customMapIds.push(mapId);
+          renderCustomMaps();
+        }
+        if (!maps[mapId]) throw new Error('De kaart van deze save is niet beschikbaar.');
+
+        const mission=saved.missionId===null
+          ?null
+          :campaignMissions.find(item=>item.id===saved.missionId);
+        if ((saved.missionId!==null&&(!mission||mission.mapId!==mapId))||
+            !saved.towers.every(tower=>{
+              const numericFields=[
+                'x','y','damage','range','rate','speed','splash','slow','chain',
+                'cost','cooldown','flashTime','aimAngle','sellValue'
+              ];
+              return tower&&types[tower.type]&&Number.isInteger(tower.level)&&
+                tower.level>=1&&tower.level<=5&&
+                numericFields.every(field=>Number.isFinite(tower[field]))&&
+                tower.x>=0&&tower.x<=W&&tower.y>=0&&tower.y<=H&&
+                targetingModes.includes(tower.targetMode);
+            })) {
+          throw new Error('De opgeslagen game bevat ongeldige gegevens.');
+        }
+
+        activeMission=mission;
+        difficulty=saved.difficulty;
+        ui.difficulty.value=difficulty;
+        ui.weather.value=saved.weather;
+        ui.quality.value=saved.quality;
+        startMap(mapId);
+        weather=saved.weather;
+        ui.weather.value=weather;
+        document.getElementById('game-ui').dataset.weather=weather;
+        resetWeatherParticles();
+        uploadMapGeometry(currentMap);
+        cash=saved.cash;
+        lives=saved.lives;
+        wave=saved.wave;
+        gameSpeed=saved.gameSpeed;
+        airstrikeCooldown=saved.airstrikeCooldown;
+        towers=saved.towers.map(tower=>({...tower}));
+        waveStartLives=lives;
+        updateUI();
+        say('Opgeslagen game hervat.','#84e58b');
+      }
+
       function openMenu() {
+        clearAutoWaveTimer();
         paused=true;
         airstrikeTargeting=false;
         document.getElementById('game-ui').dataset.airstrike='';
@@ -4293,6 +4640,9 @@
         document.getElementById('game-ui').style.display='none';
         ui.overlay.style.display='none';
         renderRecords();
+        if (currentUser) {
+          refreshSavedGame().catch(error=>accountUi.notice.textContent=error.message);
+        }
       }
 
       function togglePause() {
@@ -4319,7 +4669,7 @@
           type,x,y,level:1,
           damage:cfg.damage,range:cfg.range,rate:cfg.rate,
           speed:cfg.speed,splash:cfg.splash,slow:cfg.slow,
-          chain:cfg.chain,cost:cfg.cost,cooldown:.2,
+          chain:cfg.chain,cost:cfg.cost,cooldown:.2,flashTime:0,
           targetMode:'leading',
           aimAngle:-Math.PI/2,
           sellValue:Math.floor(cfg.cost*.7)
@@ -4372,6 +4722,7 @@
 
       function startWave() {
         if (waveActive || paused || gameOver) return;
+        clearAutoWaveTimer();
         waveActive=true;
         waveStartLives=lives;
         spawned=0;
@@ -4381,6 +4732,28 @@
         addFeedMessage(wave%5===0?'Baasgolf '+wave+' gestart':'Golf '+wave+' gestart',
           wave%5===0?'boss':'');
         updateUI();
+      }
+
+      function clearAutoWaveTimer() {
+        if (autoWaveTimer!==null) {
+          clearTimeout(autoWaveTimer);
+          autoWaveTimer=null;
+        }
+      }
+
+      function scheduleAutoWave() {
+        clearAutoWaveTimer();
+        if (!autoWave || !currentMap || gameOver) return;
+        autoWaveTimer=setTimeout(()=>{
+          autoWaveTimer=null;
+          if (!autoWave || !currentMap || gameOver ||
+              document.getElementById('game-ui').style.display!=='block') return;
+          if (paused) {
+            scheduleAutoWave();
+            return;
+          }
+          startWave();
+        },2000);
       }
 
       function removeEnemy(enemy) {
@@ -4519,6 +4892,7 @@
         wave++;
         updateUI();
         say('Golf '+clearedWave+' verslagen!','#84e58b');
+        if (autoWave) scheduleAutoWave();
       }
 
       function createShaderProgram() {
@@ -5083,6 +5457,38 @@
 
       function buildDynamicGeometry() {
         const mesh=[];
+        if (!waveActive) {
+          for (let segment=0;segment<path.length-1;segment++) {
+            const start=path[segment],end=path[segment+1];
+            const dx=end.x-start.x,dy=end.y-start.y;
+            const length=Math.hypot(dx,dy);
+            const direction={x:dx/length,y:dy/length};
+            const normal={x:-direction.y,y:direction.x};
+            for (let offset=24;offset<length-12;offset+=56) {
+              const center={
+                x:start.x+direction.x*offset,
+                y:start.y+direction.y*offset
+              };
+              const tip=gameToWorld(
+                center.x+direction.x*10,
+                center.y+direction.y*10,
+                .115
+              );
+              const left=gameToWorld(
+                center.x-direction.x*7+normal.x*6,
+                center.y-direction.y*7+normal.y*6,
+                .115
+              );
+              const right=gameToWorld(
+                center.x-direction.x*7-normal.x*6,
+                center.y-direction.y*7-normal.y*6,
+                .115
+              );
+              addTriangle(mesh,[tip.x,tip.y,tip.z],[right.x,right.y,right.z],
+                [left.x,left.y,left.z],'#f4e8c6');
+            }
+          }
+        }
         for (const tower of towers) {
           const point=gameToWorld(tower.x,tower.y);
           const aim=tower.aimAngle;
@@ -5112,7 +5518,7 @@
           const muzzleZ=point.z+Math.sin(aim)*barrelLength;
           addCylinder(mesh,muzzleX,.62,muzzleZ,
             barrelWidth*.72,.16,'#20292a',10);
-          if (tower.cooldown>tower.rate-.09) {
+          if (tower.flashTime>0) {
             const flash=.08+.045*(.5+.5*Math.sin(visualTime*45+tower.x+tower.y));
             addSphere(mesh,muzzleX,.62,muzzleZ,flash,flash,flash,
               tower.type==='laser'?'#f4d9ff':'#ffe0a0',7,4);
@@ -5328,25 +5734,30 @@
 
         for (const tower of towers) {
           tower.cooldown-=dt;
-          if (tower.cooldown>0) continue;
-
-          let target=null;
-          for (const enemy of enemies) {
-            if (Math.hypot(enemy.x-tower.x,enemy.y-tower.y)>tower.range) continue;
-            if (!target) {
-              target=enemy;
-              continue;
+          tower.flashTime=Math.max(0,tower.flashTime-dt);
+          while (tower.cooldown<=0) {
+            let target=null;
+            for (const enemy of enemies) {
+              if (!enemy.alive||
+                  Math.hypot(enemy.x-tower.x,enemy.y-tower.y)>tower.range) continue;
+              if (!target) {
+                target=enemy;
+                continue;
+              }
+              if (tower.targetMode==='strongest'&&enemy.hp>target.hp) target=enemy;
+              else if (tower.targetMode==='nearest'&&
+                  Math.hypot(enemy.x-tower.x,enemy.y-tower.y)<
+                  Math.hypot(target.x-tower.x,target.y-tower.y)) target=enemy;
+              else if (tower.targetMode==='leading'&&enemy.progress>target.progress) target=enemy;
             }
-            if (tower.targetMode==='strongest'&&enemy.hp>target.hp) target=enemy;
-            else if (tower.targetMode==='nearest'&&
-                Math.hypot(enemy.x-tower.x,enemy.y-tower.y)<
-                Math.hypot(target.x-tower.x,target.y-tower.y)) target=enemy;
-            else if (tower.targetMode==='leading'&&enemy.progress>target.progress) target=enemy;
-          }
 
-          if (target) {
+            if (!target) {
+              tower.cooldown=0;
+              break;
+            }
             shoot(tower,target);
-            tower.cooldown=tower.rate;
+            tower.flashTime=.09;
+            tower.cooldown+=tower.rate;
           }
         }
 
@@ -5547,9 +5958,15 @@
       });
 
       ui.start.addEventListener('click',startWave);
+      ui.autoWave.addEventListener('click',()=>{
+        autoWave=!autoWave;
+        if (autoWave && !waveActive && currentMap) scheduleAutoWave();
+        else if (!autoWave) clearAutoWaveTimer();
+        updateUI();
+      });
       ui.pause.addEventListener('click',togglePause);
       ui.speed.addEventListener('click',()=>{
-        const speeds=[1,1.5,2];
+        const speeds=[1,1.5,2,2.5,3,4,5];
         gameSpeed=speeds[(speeds.indexOf(gameSpeed)+1)%speeds.length];
         updateUI();
       });
@@ -5588,6 +6005,61 @@
 
       document.getElementById('back-menu').addEventListener('click',openMenu);
       document.getElementById('overlay-menu').addEventListener('click',openMenu);
+      ui.saveGame.addEventListener('click',saveCurrentGame);
+      accountUi.toggle.addEventListener('click',()=>{
+        setAuthMode(authMode==='register'?'login':'register');
+      });
+      accountUi.form.addEventListener('submit',async event=>{
+        event.preventDefault();
+        accountUi.submit.disabled=true;
+        accountUi.status.textContent=authMode==='register'
+          ?'Account wordt gemaakt…'
+          :'Je wordt ingelogd…';
+        try {
+          const result=await apiRequest(
+            authMode==='register'?'/api/register':'/api/login',
+            {
+              method:'POST',
+              body:JSON.stringify({
+                username:accountUi.username.value.trim(),
+                password:accountUi.password.value
+              })
+            }
+          );
+          accountUi.password.value='';
+          await showAuthenticatedMenu(result.username);
+        } catch (error) {
+          accountUi.status.textContent=error.message;
+        } finally {
+          accountUi.submit.disabled=false;
+        }
+      });
+      document.getElementById('account-logout').addEventListener('click',async event=>{
+        const button=event.currentTarget;
+        button.disabled=true;
+        try {
+          await apiRequest('/api/logout',{method:'POST'});
+          setAuthMode('login');
+          showAccountGate('Je bent uitgelogd.');
+        } catch (error) {
+          accountUi.notice.textContent=error.message;
+        } finally {
+          button.disabled=false;
+        }
+      });
+      ui.resumeGame.addEventListener('click',async()=>{
+        ui.resumeGame.disabled=true;
+        try {
+          const result=await apiRequest('/api/save');
+          if (!result.save) throw new Error('Er is nog geen game opgeslagen.');
+          restoreSavedGame(result.save);
+        } catch (error) {
+          accountUi.notice.textContent=error.message;
+          if (error.status===401) showAccountGate('Je sessie is verlopen. Log opnieuw in.');
+        } finally {
+          ui.resumeGame.disabled=false;
+        }
+      });
       document.getElementById('restart-map').addEventListener('click',()=>{
         const mapId=Object.keys(maps).find(key=>maps[key]===currentMap);
         if (mapId) startMap(mapId);
@@ -5608,6 +6080,7 @@
         if (inGame&&event.code==='Digit1') gameSpeed=1;
         if (inGame&&event.code==='Digit2') gameSpeed=1.5;
         if (inGame&&event.code==='Digit3') gameSpeed=2;
+         if (inGame&&event.code==='Digit3') gameSpeed=2;
         if (inGame&&['Digit1','Digit2','Digit3'].includes(event.code)) updateUI();
       });
 
@@ -5615,6 +6088,8 @@
 
       loadCustomMaps();
       renderRecords();
+      setAuthMode('register');
+      initializeAccount();
       function frame(time) {
         const dt=Math.min((time-lastTime)/1000||0,.04)*gameSpeed;
         lastTime=time;
@@ -5630,4 +6105,3 @@
   </script>
 </body>
 </html>
-
